@@ -1,6 +1,3 @@
-from pydbus import SystemBus
-import ipaddress
-
 NM_DEVICE_TYPE_ETHERNET = 1
 NM_DEVICE_TYPE_WIFI = 2
 NM_STATE_ACTIVATED = 100
@@ -8,45 +5,64 @@ NM_STATE_ACTIVATED = 100
 
 def format_bps(value):
     if value >= 1000:
-        return str(int(value / 1000)) + " Gbit/s"
+        return "".join([str(int(value / 1000)) + " Gbit/s"])
     else:
-        return str(value) + " Mbit/s"
+        return "".join([str(value) + " Mbit/s"])
 
 
 def format_ssid(value_list):
-    ssid = ""
+    char_list = []
+    for v in value_list:
+        char_list.append(chr(v))
 
-    for value in value_list:
-        ssid += chr(value)
-
-    return ssid
+    return "".join(char_list)
 
 
-def networks(spacer):
-    system_bus = SystemBus()
-    nm_proxy = system_bus.get('org.freedesktop.NetworkManager')
-    devices = nm_proxy.Devices
+class Network:
+    system_bus = None
+    ethernet_proxy = None
+    wifi_proxy = None
 
-    string = ""
+    def __init__(self, system_bus):
+        self.system_bus = system_bus
+        nm_proxy = self.system_bus.get('org.freedesktop.NetworkManager')
 
-    for device in devices:
-        device_proxy = system_bus.get('org.freedesktop.NetworkManager', device)
+        devices = nm_proxy.Devices
 
-        if device_proxy.State == NM_STATE_ACTIVATED:
-            if len(string) != 0:
-                string += spacer
+        for device in devices:
+            device_proxy = self.system_bus.get('org.freedesktop.NetworkManager', device)
 
             if device_proxy.DeviceType == NM_DEVICE_TYPE_ETHERNET:
-                ip4_config_proxy = system_bus.get('org.freedesktop.NetworkManager', device_proxy.Ip4Config)
-                string += device_proxy.Interface + ": " + ip4_config_proxy.AddressData[0][
-                    "address"] + " (" + format_bps(device_proxy.Speed) + ")"
-
+                self.ethernet_proxy = device_proxy
             elif device_proxy.DeviceType == NM_DEVICE_TYPE_WIFI:
-                ip4_config_proxy = system_bus.get('org.freedesktop.NetworkManager', device_proxy.Ip4Config)
-                active_access_point_proxy = system_bus.get('org.freedesktop.NetworkManager',
-                                                           device_proxy.ActiveAccessPoint)
+                self.wifi_proxy = device_proxy
 
-                string += device_proxy.Interface + ": " + ip4_config_proxy.AddressData[0][
-                    "address"] + " (" + format_ssid(active_access_point_proxy.Ssid) + ")"
+    def ethernet(self, spacer):
+        if self.ethernet_proxy is None or self.ethernet_proxy.State != NM_STATE_ACTIVATED:
+            return ""
 
-    return string
+        ip4_config_proxy = self.system_bus.get('org.freedesktop.NetworkManager', self.ethernet_proxy.Ip4Config)
+
+        return "".join([self.ethernet_proxy.Interface,
+                        ": ",
+                        ip4_config_proxy.AddressData[0]["address"],
+                        " (",
+                        format_bps(self.ethernet_proxy.Speed),
+                        ")",
+                        spacer])
+
+    def wifi(self, spacer):
+        if self.wifi_proxy is None or self.wifi_proxy.State != NM_STATE_ACTIVATED:
+            return ""
+
+        ip4_config_proxy = self.system_bus.get('org.freedesktop.NetworkManager', self.wifi_proxy.Ip4Config)
+        active_access_point_proxy = self.system_bus.get('org.freedesktop.NetworkManager',
+                                                        self.wifi_proxy.ActiveAccessPoint)
+
+        return "".join([self.wifi_proxy.Interface,
+                        ": ",
+                        ip4_config_proxy.AddressData[0]["address"],
+                        " (",
+                        format_ssid(active_access_point_proxy.Ssid),
+                        ")",
+                        spacer])

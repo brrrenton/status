@@ -2,7 +2,6 @@
 
 # requires "python3-pydbus" and "python3-xlib"
 
-import time
 import datetime
 
 from pydbus import SystemBus
@@ -11,11 +10,6 @@ from network import Network
 from memory import memory_free
 from battery import Battery
 
-import Xlib.display
-
-display = Xlib.display.Display()
-root = display.screen().root
-
 SPACER = " | "
 
 system_bus = SystemBus()
@@ -23,7 +17,8 @@ system_bus = SystemBus()
 network = Network(system_bus)
 battery = Battery(system_bus)
 
-while 1:
+
+def f():
     string = "".join([" ",
                       network.ethernet(SPACER),
                       network.wifi(SPACER),
@@ -32,6 +27,11 @@ while 1:
                       datetime.datetime.now().strftime("%Y-%m-%d %A %-I:%M %P"),
                       " "])
 
-    root.set_wm_name(string)
-    display.sync()
-    time.sleep(1)
+    print(string)
+
+
+if __name__ == "__main__":
+    import timeit
+
+    n = 10
+    print(timeit.timeit("f()", globals=globals(), number=n) / n)

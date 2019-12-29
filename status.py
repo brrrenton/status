@@ -2,41 +2,48 @@
 
 # requires "python3-pydbus" and "python3-xlib"
 
+import time
 import datetime
+import threading
+import Xlib.display
 
-from pydbus import SystemBus
+from gi.repository import GLib
 
 from network import Network
 from memory import memory_free
 from battery import Battery
 
-SPACER = " | "
+SPACER = ' | '
 
-system_bus = SystemBus()
-
-network = Network(system_bus)
-battery = Battery(system_bus)
+network = Network(SPACER)
+battery = Battery(SPACER)
 
 
 def status():
-    return "".join([" ",
-                    network.ethernet(SPACER),
-                    network.wifi(SPACER),
+    return ''.join([' ',
+                    network.ethernet_status,
+                    network.wifi_status,
                     memory_free(SPACER),
-                    battery.status(SPACER),
-                    datetime.datetime.now().strftime("%Y-%m-%d %A %-I:%M %P"),
-                    " "])
+                    battery.status,
+                    datetime.datetime.now().strftime('%Y-%m-%d %A %-I:%M %P'),
+                    ' '])
 
 
-if __name__ == "__main__":
-    import time
-
-    import Xlib.display
+if __name__ == '__main__':
 
     display = Xlib.display.Display()
     root = display.screen().root
 
-    while 1:
-        root.set_wm_name(status())
-        display.sync()
-        time.sleep(1)
+    loop = GLib.MainLoop()
+
+    loop_thread = threading.Thread(target=loop.run)
+    loop_thread.start()
+
+    while True:
+        try:
+            root.set_wm_name(status())
+            display.sync()
+            #print(status())
+            time.sleep(1)
+        except KeyboardInterrupt:
+            exit(0)

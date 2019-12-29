@@ -3,7 +3,6 @@ system_bus = SystemBus()
 
 NM_DEVICE_TYPE_ETHERNET = 1
 NM_DEVICE_TYPE_WIFI = 2
-NM_STATE_ACTIVATED = 100
 
 
 def format_bps(value):
@@ -29,61 +28,58 @@ def format_ip4_addr(ip4_addr_decimal):
 
 
 class Network:
-    _ethernet_proxy = None
-    _wifi_proxy = None
+    _nm_proxy = None
+    _device_proxies = []
 
     _spacer = ''
-    ethernet_status = ''
-    wifi_status = ''
+    status = ''
 
     def __init__(self, spacer):
         self._spacer = spacer
 
-        nm_proxy = system_bus.get('org.freedesktop.NetworkManager')
+        self._nm_proxy = system_bus.get('org.freedesktop.NetworkManager')
 
-        devices = nm_proxy.Devices
+        if self._nm_proxy is not None:
+            self._update1()
+            self._nm_proxy.PropertiesChanged.connect(self._update1)
 
-        for device in devices:
-            device_proxy = system_bus.get('org.freedesktop.NetworkManager', device)
+    def _update1(self, values='', sep='', end=''):
+        self._device_proxies = []
 
+        active_connections = self._nm_proxy.ActiveConnections
+
+        for active_connection in active_connections:
+            active_connection_proxy = system_bus.get('org.freedesktop.NetworkManager', active_connection)
+
+            devices = active_connection_proxy.Devices
+
+            for device in devices:
+                device_proxy = system_bus.get('org.freedesktop.NetworkManager', device)
+                device_proxy.PropertiesChanged.connect(self._update2)
+                self._device_proxies.append(device_proxy)
+
+        self._update2()
+
+    def _update2(self, values='', sep='', end=''):
+        self.status = ''
+
+        for device_proxy in self._device_proxies:
             if device_proxy.DeviceType == NM_DEVICE_TYPE_ETHERNET:
-                self._ethernet_proxy = device_proxy
-            elif device_proxy.DeviceType == NM_DEVICE_TYPE_WIFI:
-                self._wifi_proxy = device_proxy
-
-        if self._ethernet_proxy is not None:
-            self._update_ethernet()
-            self._ethernet_proxy.PropertiesChanged.connect(self._update_ethernet)
-
-        if self._wifi_proxy is not None:
-            self._update_wifi()
-            self._wifi_proxy.PropertiesChanged.connect(self._update_wifi)
-
-    def _update_ethernet(self, values='', sep='', end=''):
-        if self._ethernet_proxy is None or self._ethernet_proxy.State != NM_STATE_ACTIVATED:
-            self.ethernet_status = ''
-            return
-
-        self.ethernet_status = ''.join([self._ethernet_proxy.Interface,
+                self.status += ''.join([device_proxy.Interface,
                                         ': ',
-                                        format_ip4_addr(self._ethernet_proxy.Ip4Address),
+                                        format_ip4_addr(device_proxy.Ip4Address),
                                         ' (',
-                                        format_bps(self._ethernet_proxy.Speed),
+                                        format_bps(device_proxy.Speed),
                                         ')',
                                         self._spacer])
+            elif device_proxy.DeviceType == NM_DEVICE_TYPE_WIFI:
+                active_access_point_proxy = system_bus.get('org.freedesktop.NetworkManager',
+                                                           device_proxy.ActiveAccessPoint)
 
-    def _update_wifi(self, values='', sep='', end=''):
-        if self._wifi_proxy is None or self._wifi_proxy.State != NM_STATE_ACTIVATED:
-            self.wifi_status = ''
-            return
-
-        active_access_point_proxy = system_bus.get('org.freedesktop.NetworkManager',
-                                                   self._wifi_proxy.ActiveAccessPoint)
-
-        self.wifi_status = ''.join([self._wifi_proxy.Interface,
-                                    ': ',
-                                    format_ip4_addr(self._wifi_proxy.Ip4Address),
-                                    ' (',
-                                    format_ssid(active_access_point_proxy.Ssid),
-                                    ')',
-                                    self._spacer])
+                self.status += ''.join([device_proxy.Interface,
+                                        ': ',
+                                        format_ip4_addr(device_proxy.Ip4Address),
+                                        ' (',
+                                        format_ssid(active_access_point_proxy.Ssid),
+                                        ')',
+                                        self._spacer])

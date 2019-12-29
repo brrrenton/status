@@ -13,7 +13,7 @@ def format_state(value):
     elif value == UPOWER_STATE_DISCHARGING:
         return '-'
     elif value == UPOWER_STATE_FULLY_CHARGED:
-        return '~'
+        return ''
     else:
         return '?'
 

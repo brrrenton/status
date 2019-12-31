@@ -54,4 +54,5 @@ if __name__ == '__main__':
     while not interrupted:
         root.set_wm_name(status())
         display.sync()
+        # print(status())
         time.sleep(1)

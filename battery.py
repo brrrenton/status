@@ -53,7 +53,7 @@ class Battery:
 
         state = self._device_proxy.State
 
-        time = ' '
+        time = ''
 
         if state == UPOWER_STATE_CHARGING:
             time = format_time(self._device_proxy.TimeToFull)

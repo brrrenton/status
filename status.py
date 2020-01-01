@@ -5,9 +5,7 @@
 # "Network" and "Battery" modules require "python3-pydbus"
 
 import signal
-import time
 import datetime
-import threading
 import Xlib.display
 
 from gi.repository import GLib
@@ -22,12 +20,9 @@ network = Network(SPACER)
 battery = Battery(SPACER)
 
 loop = GLib.MainLoop()
-loop_thread = threading.Thread(target=loop.run)
 
 display = Xlib.display.Display()
 root = display.screen().root
-
-interrupted = False
 
 
 def status():
@@ -40,19 +35,19 @@ def status():
 
 
 def handler(signum, frame):
-    global interrupted
-    interrupted = True
     loop.quit()
 
 
-if __name__ == '__main__':
+def update():
+    root.set_wm_name(status())
+    display.sync()
+    # print(status())
+    return True
 
+
+if __name__ == '__main__':
     signal.signal(signal.SIGINT, handler)
 
-    loop_thread.start()
+    GLib.timeout_add_seconds(1, update)
 
-    while not interrupted:
-        root.set_wm_name(status())
-        display.sync()
-        # print(status())
-        time.sleep(1)
+    loop.run()

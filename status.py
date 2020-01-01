@@ -14,10 +14,10 @@ from network import Network
 from memory import memory_free
 from battery import Battery
 
-SPACER = ' | '
+spacer = ' | '
 
-network = Network(SPACER)
-battery = Battery(SPACER)
+network = Network(spacer)
+battery = Battery(spacer)
 
 loop = GLib.MainLoop()
 
@@ -25,17 +25,17 @@ display = Xlib.display.Display()
 root = display.screen().root
 
 
+def handler(signum, frame):
+    loop.quit()
+
+
 def status():
     return ''.join([' ',
                     network.status,
-                    memory_free(SPACER),
+                    memory_free(spacer),
                     battery.status,
                     datetime.datetime.now().strftime('%Y-%m-%d %A %-I:%M %P'),
                     ' '])
-
-
-def handler(signum, frame):
-    loop.quit()
 
 
 def update():
@@ -47,6 +47,9 @@ def update():
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, handler)
+
+    network.parent_update_function = update
+    battery.parent_update_function = update
 
     GLib.timeout_add_seconds(1, update)
 

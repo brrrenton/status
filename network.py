@@ -1,4 +1,5 @@
 from pydbus import SystemBus
+
 system_bus = SystemBus()
 
 NM_DEVICE_TYPE_ETHERNET = 1
@@ -83,3 +84,8 @@ class Network:
                                         format_ssid(active_access_point_proxy.Ssid),
                                         ')',
                                         self._spacer])
+
+        self.parent_update_function()
+
+    def parent_update_function(self):
+        pass

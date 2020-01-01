@@ -66,3 +66,8 @@ class Battery:
                                '%',
                                time,
                                self._spacer])
+
+        self.parent_update_function()
+
+    def parent_update_function(self):
+        pass

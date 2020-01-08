@@ -66,15 +66,17 @@ class Network:
 
         for device_proxy in self._device_proxies:
             if device_proxy.DeviceType == NM_DEVICE_TYPE_ETHERNET:
+                ip4_config_proxy = system_bus.get('org.freedesktop.NetworkManager', device_proxy.Ip4Config)
+
                 if device_proxy.Speed == 0:
                     self.status += ''.join([device_proxy.Interface,
                                             ': ',
-                                            format_ip4_addr(device_proxy.Ip4Address),
+                                            ip4_config_proxy.AddressData[0]["address"],
                                             self._spacer])
                 else:
                     self.status += ''.join([device_proxy.Interface,
                                             ': ',
-                                            format_ip4_addr(device_proxy.Ip4Address),
+                                            ip4_config_proxy.AddressData[0]["address"],
                                             ' (',
                                             format_bps(device_proxy.Speed),
                                             ')',

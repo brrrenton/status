@@ -66,13 +66,19 @@ class Network:
 
         for device_proxy in self._device_proxies:
             if device_proxy.DeviceType == NM_DEVICE_TYPE_ETHERNET:
-                self.status += ''.join([device_proxy.Interface,
-                                        ': ',
-                                        format_ip4_addr(device_proxy.Ip4Address),
-                                        ' (',
-                                        format_bps(device_proxy.Speed),
-                                        ')',
-                                        self._spacer])
+                if device_proxy.Speed == 0:
+                    self.status += ''.join([device_proxy.Interface,
+                                            ': ',
+                                            format_ip4_addr(device_proxy.Ip4Address),
+                                            self._spacer])
+                else:
+                    self.status += ''.join([device_proxy.Interface,
+                                            ': ',
+                                            format_ip4_addr(device_proxy.Ip4Address),
+                                            ' (',
+                                            format_bps(device_proxy.Speed),
+                                            ')',
+                                            self._spacer])
             elif device_proxy.DeviceType == NM_DEVICE_TYPE_WIFI:
                 active_access_point_proxy = system_bus.get('org.freedesktop.NetworkManager',
                                                            device_proxy.ActiveAccessPoint)

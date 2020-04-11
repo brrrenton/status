@@ -12,6 +12,7 @@ from gi.repository import GLib
 
 from network import Network
 from memory import memory_free
+from volume import volume
 from battery import Battery
 
 spacer = ' | '
@@ -33,6 +34,7 @@ def status():
     return ''.join([' ',
                     network.status,
                     memory_free(spacer),
+                    volume(spacer),
                     battery.status,
                     datetime.datetime.now().strftime('%Y-%m-%d %A %-I:%M %P'),
                     ' '])
@@ -41,7 +43,7 @@ def status():
 def update():
     root.set_wm_name(status())
     display.sync()
-    # print(status())
+    #print(status())
     return True
 
 

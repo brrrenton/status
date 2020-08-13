@@ -50,7 +50,10 @@ class Network:
         active_connections = self._nm_proxy.ActiveConnections
 
         for active_connection in active_connections:
-            active_connection_proxy = system_bus.get('org.freedesktop.NetworkManager', active_connection)
+            try:
+                active_connection_proxy = system_bus.get('org.freedesktop.NetworkManager', active_connection)
+            except:
+                continue
 
             devices = active_connection_proxy.Devices
 
@@ -66,7 +69,10 @@ class Network:
 
         for device_proxy in self._device_proxies:
             if device_proxy.DeviceType == NM_DEVICE_TYPE_ETHERNET:
-                ip4_config_proxy = system_bus.get('org.freedesktop.NetworkManager', device_proxy.Ip4Config)
+                try:
+                    ip4_config_proxy = system_bus.get('org.freedesktop.NetworkManager', device_proxy.Ip4Config)
+                except:
+                    continue
 
                 if device_proxy.Speed == 0:
                     self.status += ''.join([device_proxy.Interface,
@@ -82,8 +88,11 @@ class Network:
                                             ')',
                                             self._spacer])
             elif device_proxy.DeviceType == NM_DEVICE_TYPE_WIFI:
-                active_access_point_proxy = system_bus.get('org.freedesktop.NetworkManager',
-                                                           device_proxy.ActiveAccessPoint)
+                try:
+                    active_access_point_proxy = system_bus.get('org.freedesktop.NetworkManager',
+                                                               device_proxy.ActiveAccessPoint)
+                except:
+                    continue
 
                 self.status += ''.join([device_proxy.Interface,
                                         ': ',
